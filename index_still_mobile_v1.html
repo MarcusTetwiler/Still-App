@@ -1,0 +1,109 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Still</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: white;
+      overflow: hidden;
+      touch-action: none;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="still"></canvas>
+  <script>
+    const canvas = document.getElementById("still");
+    const ctx = canvas.getContext("2d");
+    let width, height;
+
+    function resize() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+    }
+
+    window.addEventListener("resize", resize);
+    resize();
+
+    const balls = [];
+
+    class Ball {
+      constructor(x, y, vx, vy, hue) {
+        this.x = x;
+        this.y = y;
+        this.vx = vx;
+        this.vy = vy;
+        this.hue = hue;
+        this.alpha = 1;
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vx *= 0.99;
+        this.vy *= 0.99;
+        this.alpha *= 0.99;
+      }
+
+      draw(ctx) {
+        ctx.strokeStyle = `hsla(${this.hue}, 90%, 50%, ${this.alpha})`;
+        ctx.beginPath();
+        ctx.moveTo(this.x, this.y);
+        ctx.lineTo(this.x - this.vx * 10, this.y - this.vy * 10);
+        ctx.stroke();
+      }
+    }
+
+    function getHueFromTouch(x, y) {
+      const dx = x - width / 2;
+      const dy = y - height / 2;
+      const angle = Math.atan2(dy, dx);
+      return (angle * 180 / Math.PI + 360) % 360;
+    }
+
+    canvas.addEventListener("pointerdown", e => {
+      const touches = balls.filter(ball => {
+        const dx = e.clientX - ball.x;
+        const dy = e.clientY - ball.y;
+        return Math.sqrt(dx*dx + dy*dy) < 80;
+      });
+
+      if (touches.length === 0) {
+        const hue = getHueFromTouch(e.clientX, e.clientY);
+        const vx = (Math.random() - 0.5) * 4;
+        const vy = (Math.random() - 0.5) * 4;
+        balls.push(new Ball(e.clientX, e.clientY, vx, vy, hue));
+      } else {
+        for (let ball of touches) {
+          const hue = getHueFromTouch(ball.x, ball.y);
+          const vx = (Math.random() - 0.5) * 4;
+          const vy = (Math.random() - 0.5) * 4;
+          balls.push(new Ball(ball.x, ball.y, vx, vy, hue));
+        }
+      }
+    });
+
+    function animate() {
+      ctx.fillStyle = "rgba(255,255,255,0.05)";
+      ctx.fillRect(0, 0, width, height);
+      for (let ball of balls) {
+        ball.update();
+        ball.draw(ctx);
+      }
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
